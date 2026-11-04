@@ -47,20 +47,9 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Restaurar assinatura fixa do APK
-        shell: bash
-        env:
-          REEL_DEBUG_KEYSTORE_B64: ${{ secrets.REEL_DEBUG_KEYSTORE_B64 }}
-        run: |
-          set -euo pipefail
-          if [ -z "$REEL_DEBUG_KEYSTORE_B64" ]; then
-            echo 'ERRO: configure o secret REEL_DEBUG_KEYSTORE_B64 no GitHub.' >&2
-            exit 1
-          fi
-          mkdir -p "$HOME/.android"
-          printf '%s' "$REEL_DEBUG_KEYSTORE_B64" | base64 --decode > "$HOME/.android/debug.keystore"
-          chmod 600 "$HOME/.android/debug.keystore"
-          keytool -list -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey >/dev/null
+      # APK de teste: o Android Gradle Plugin gera automaticamente uma chave debug.
+      # Não é necessário cadastrar REEL_DEBUG_KEYSTORE_B64.
+      # Atenção: a chave de debug pode mudar entre execuções do GitHub Actions.
 
       - name: Incrementar versionCode para permitir atualização
         shell: bash
@@ -86,6 +75,6 @@ jobs:
       - name: Disponibilizar APK
         uses: actions/upload-artifact@v4
         with:
-          name: ReelSeries-Android-APK
+          name: ReelSeries-TV-Teste-Debug-APK
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
