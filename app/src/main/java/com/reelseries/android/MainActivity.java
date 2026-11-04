@@ -71,9 +71,24 @@ public class MainActivity extends Activity {
  else{box=new LinearLayout(MainActivity.this);box.setOrientation(1);box.setBackgroundColor(0xff1c2432);box.setPadding(dp(5),dp(5),dp(5),dp(7));
   if(tvMode()){box.setFocusable(true);box.setOnFocusChangeListener((v,focused)->{v.setBackgroundColor(focused?0xff4264a8:0xff1c2432);v.setScaleX(focused?1.035f:1f);v.setScaleY(focused?1.035f:1f);});}
   cover=new ImageView(MainActivity.this);cover.setBackgroundColor(0xff30394b);cover.setScaleType(ImageView.ScaleType.CENTER_CROP);box.addView(cover,new LinearLayout.LayoutParams(-1,dp(tvMode()?140:165)));label=new TextView(MainActivity.this);label.setTextColor(fg);label.setTextSize(12);label.setMaxLines(2);label.setEllipsize(android.text.TextUtils.TruncateAt.END);box.addView(label);}
- JSONObject item=shown.get(p);label.setText(item.optString("nome"));loadCover(item.optString("capa"),cover);return box;
+ JSONObject item=shown.get(p);
+  label.setText(item.optString("nome"));loadCover(item.optString("capa"),cover);
+  // O cartão inteiro abre os detalhes, inclusive ao tocar na imagem ou no título.
+  // Usa o item do próprio cartão, não uma posição que possa mudar após a atualização da grade.
+  box.setClickable(true);
+  box.setFocusable(tvRemoteMode());
+  box.setDescendantFocusability(android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS);
+  box.setOnClickListener(v->details(item));
+  box.setOnKeyListener((v,key,event)->{
+   if(event.getAction()==KeyEvent.ACTION_UP &&
+      (key==KeyEvent.KEYCODE_DPAD_CENTER || key==KeyEvent.KEYCODE_ENTER || key==KeyEvent.KEYCODE_NUMPAD_ENTER)){
+    details(item);return true;
+   }
+   return false;
+  });
+  return box;
  }};grid.setAdapter(adapter);
- grid.setOnItemClickListener((a,v,p,id)->details(shown.get(p)));
+ grid.setOnItemClickListener((a,v,p,id)->{if(p>=0&&p<shown.size())details(shown.get(p));});
  search.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int st,int c,int af){}public void onTextChanged(CharSequence s,int st,int before,int count){if(pending!=null)handler.removeCallbacks(pending);pending=()->resetFeed();handler.postDelayed(pending,220);}public void afterTextChanged(Editable e){}});
  categories.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener(){public void onNothingSelected(android.widget.AdapterView<?> p){}public void onItemSelected(android.widget.AdapterView<?> p,View v,int pos,long id){selected=catNames.get(pos);resetFeed();}});
  pool.execute(()->{try{ByteArrayOutputStream out=new ByteArrayOutputStream();InputStream in=getAssets().open("catalogo.json");byte[] buf=new byte[32768];int n;while((n=in.read(buf))!=-1)out.write(buf,0,n);in.close();JSONArray arr=new JSONArray(out.toString("UTF-8"));ArrayList<JSONObject> loaded=new ArrayList<>();TreeSet<String> cats=new TreeSet<>();for(int i=0;i<arr.length();i++){JSONObject o=arr.getJSONObject(i);loaded.add(o);cats.add(o.optString("categoria"));}runOnUiThread(()->{all.addAll(loaded);catNames.addAll(cats);if(!loaded.isEmpty()){
