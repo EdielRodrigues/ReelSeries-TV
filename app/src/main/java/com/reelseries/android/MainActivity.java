@@ -258,8 +258,8 @@ public class MainActivity extends Activity {
   if(params!=null&&params.height!=height){params.height=height;grid.setLayoutParams(params);}
  }
  @Override protected void onResume(){super.onResume();
-  int wanted=tvMode()?android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE:android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED;
-  if(getRequestedOrientation()!=wanted){setRequestedOrientation(wanted);recreate();return;}
+  int wantedOrientation=tvMode()?android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE:android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED;
+  if(getRequestedOrientation()!=wantedOrientation){setRequestedOrientation(wantedOrientation);return;}
   heroActive=true;if(heroBatchTicker!=null){handler.removeCallbacks(heroBatchTicker);handler.post(heroBatchTicker);}if(heroTicker!=null){handler.removeCallbacks(heroTicker);handler.postDelayed(heroTicker,HERO_SLIDE_MS);}if(search!=null){String wanted=getIntent().getStringExtra("reel_search_title");if(wanted!=null&&!wanted.isEmpty()){getIntent().removeExtra("reel_search_title");search.setText(wanted);search.setSelection(search.length());}resetFeed();if(FirebaseCatalogSync.configured(this))loadCloud();}}
  @Override protected void onNewIntent(Intent intent){super.onNewIntent(intent);setIntent(intent);if(search!=null){String wanted=intent.getStringExtra("reel_search_title");if(wanted!=null&&!wanted.isEmpty()){intent.removeExtra("reel_search_title");search.setText(wanted);search.setSelection(search.length());}}}
  void details(JSONObject o){Intent i=new Intent(this,DetailsActivity.class);i.putExtra("item",o.toString());startActivity(i);}
