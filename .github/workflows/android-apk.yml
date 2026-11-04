@@ -51,30 +51,52 @@ jobs:
       # Não é necessário cadastrar REEL_DEBUG_KEYSTORE_B64.
       # Atenção: a chave de debug pode mudar entre execuções do GitHub Actions.
 
-      - name: Incrementar versionCode para permitir atualização
+      - name: Localizar projeto Android
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Arquivos encontrados na raiz:"
+          ls -la
+          python3 - <<'PYCODE'
+          from pathlib import Path
+          import os
+          candidates=[p.parent.parent for p in Path('.').glob('**/app/build.gradle.kts') if '.git' not in p.parts and 'build' not in p.parts]
+          if not candidates:
+              raise SystemExit('ERRO: app/build.gradle.kts não foi enviado ao GitHub. Envie a pasta app completa e os arquivos build.gradle.kts e settings.gradle.kts do ZIP do aplicativo.')
+          candidates=[p for p in candidates if (p/'settings.gradle.kts').is_file()]
+          if len(candidates)!=1:
+              raise SystemExit(f'ERRO: esperado um projeto Android com settings.gradle.kts, encontrados: {candidates}')
+          project=str(candidates[0].resolve())
+          with open(os.environ['GITHUB_ENV'],'a') as f:f.write('ANDROID_PROJECT_DIR='+project+'\n')
+          print('Projeto localizado em:',project)
+          PYCODE
+
+      - name: Incrementar versionCode para teste
         shell: bash
         env:
           RUN_NUMBER: ${{ github.run_number }}
         run: |
           set -euo pipefail
-          python3 - <<'PY'
+          python3 - <<'PYCODE'
           import os,re,pathlib
-          p=pathlib.Path('app/build.gradle.kts')
-          if not p.exists(): raise SystemExit('Arquivo app/build.gradle.kts não encontrado')
+          p=pathlib.Path(os.environ['ANDROID_PROJECT_DIR'])/'app/build.gradle.kts'
           s=p.read_text()
           code=100000+int(os.environ['RUN_NUMBER'])
           s,n=re.subn(r'\bversionCode\s*=\s*\d+',f'versionCode = {code}',s,count=1)
-          if n!=1: raise SystemExit('Não foi possível localizar versionCode no Gradle')
+          if n!=1: raise SystemExit('ERRO: versionCode não encontrado em '+str(p))
           p.write_text(s)
-          print('versionCode atualizado:',code)
-          PY
+          print('versionCode:',code)
+          PYCODE
 
-      - name: Compilar APK
-        run: gradle --no-daemon --stacktrace assembleDebug
+      - name: Compilar APK de teste
+        shell: bash
+        run: |
+          cd "$ANDROID_PROJECT_DIR"
+          gradle --no-daemon --stacktrace assembleDebug
 
       - name: Disponibilizar APK
         uses: actions/upload-artifact@v4
         with:
           name: ReelSeries-TV-Teste-Debug-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: "**/app/build/outputs/apk/debug/app-debug.apk"
           if-no-files-found: error
