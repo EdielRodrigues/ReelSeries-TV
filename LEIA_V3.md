@@ -19,3 +19,5 @@
 ## Como compilar
 Enviar conteúdo do ZIP à raiz do repositório, preservando `.github/workflows/android-apk.yml`.
 GitHub Actions > Gerar APK Android > Run workflow.
+
+V3.1: removida mudanca de orientacao em onCreate para evitar reinicializacao ao ativar modo TV. A orientacao deve ser alterada pelo Android para testar em paisagem.
