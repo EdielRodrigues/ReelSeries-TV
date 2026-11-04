@@ -141,7 +141,7 @@ public class PlayerActivity extends Activity {
   try{android.content.SharedPreferences pref=getSharedPreferences("reel_continue_history",MODE_PRIVATE);
    org.json.JSONObject entry=new org.json.JSONObject();entry.put("url",url);entry.put("name",displayName);entry.put("position",pos);entry.put("duration",duration);entry.put("updated",System.currentTimeMillis());entry.put("capa",posterUrl==null?"":posterUrl);
    String key=progressKey(url);if(duration>0&&pos>=duration-15000)pref.edit().remove(key).apply();
-   else pref.edit().putString(key,entry.toString()).commit();
+   else {pref.edit().putString(key,entry.toString()).commit();CloudUserState.put(this,"reel_continue_history",key,entry.toString());}
   }catch(Exception ignored){}
  }
  private void saveProgress(){if(player==null||url==null||isXtreamLive(url))return;long duration=player.getDuration(),pos=player.getCurrentPosition();if(pos<2000)return;

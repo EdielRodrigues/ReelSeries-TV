@@ -15,9 +15,10 @@ public class MainActivity extends Activity {
  long heroBatchStart=0L;
  Runnable heroBatchTicker;
 
+ boolean tvMode(){return getSharedPreferences("reel_tv_options",MODE_PRIVATE).getBoolean("tv_mode",false);}
  int bg=Color.rgb(12,16,27), fg=Color.WHITE; final ArrayList<String> catNames=new ArrayList<>();
  int dp(int n){return (int)(n*getResources().getDisplayMetrics().density+.5f);}
- @Override public void onCreate(Bundle b){super.onCreate(b);CloudUserState.start(this);checkApkUpdate();getWindow().setStatusBarColor(bg);getWindow().setNavigationBarColor(Color.BLACK);
+ @Override public void onCreate(Bundle b){super.onCreate(b);CloudUserState.start(this);if(tvMode())setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);checkApkUpdate();getWindow().setStatusBarColor(bg);getWindow().setNavigationBarColor(Color.BLACK);
  LinearLayout layout=new LinearLayout(this);layout.setOrientation(1);layout.setBackgroundColor(bg);
  LinearLayout header=new LinearLayout(this);header.setGravity(Gravity.CENTER_VERTICAL);header.setPadding(dp(16),dp(10),dp(16),dp(10));layout.addView(header);
  TextView menu=navText("☰",25);header.addView(menu,new LinearLayout.LayoutParams(dp(44),dp(48)));menu.setOnClickListener(v->new AlertDialog.Builder(this).setItems(new String[]{"Início","Filmes","Séries","Canais IPTV","Meu perfil","Administração"},(d,w)->{if(w==4)startActivity(new Intent(this,ProfileActivity.class));else if(w==5)startActivity(new Intent(this,AdminActivity.class));else chooseCategory(w==0?"Todos":w==1?"Filmes":w==2?"Séries":"TV / IPTV");}).show());
@@ -46,7 +47,15 @@ public class MainActivity extends Activity {
  search=new EditText(this);search.setSingleLine(true);search.setHint("Pesquisar filme, série ou episódio");search.setTextColor(fg);search.setHintTextColor(0xff9fa5b3);search.setBackgroundColor(0xff171e2a);search.setPadding(dp(12),0,dp(12),0);LinearLayout.LayoutParams sp=new LinearLayout.LayoutParams(-1,dp(48));sp.topMargin=dp(14);content.addView(search,sp);
  LinearLayout sort=new LinearLayout(this);sort.setGravity(Gravity.CENTER_VERTICAL);sort.setPadding(0,dp(10),0,0);content.addView(sort);TextView heading=navText("Em destaque",23);heading.setTypeface(null,1);sort.addView(heading,new LinearLayout.LayoutParams(0,-2,1));categories=new Spinner(this);sort.addView(categories,new LinearLayout.LayoutParams(dp(155),dp(48)));catNames.add("Todas");categories.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_spinner_dropdown_item,catNames));
  status=navText("Carregando catálogo...",12);status.setTextColor(0xffaeb6c7);content.addView(status);
- grid=new GridView(this);grid.setNumColumns(3);grid.setVerticalSpacing(dp(12));grid.setHorizontalSpacing(dp(9));grid.setClipToPadding(false);grid.setPadding(0,dp(10),0,dp(12));grid.setNestedScrollingEnabled(true);content.addView(grid,new LinearLayout.LayoutParams(-1,dp(460)));moreButton=actionText("CARREGAR MAIS TÍTULOS  ↓",false);LinearLayout.LayoutParams moreParams=new LinearLayout.LayoutParams(-1,dp(52));moreParams.topMargin=dp(10);content.addView(moreButton,moreParams);moreButton.setOnClickListener(v->loadNextPage());setContentView(layout);
+ grid=new GridView(this);grid.setNumColumns(tvMode()?5:3);grid.setVerticalSpacing(dp(12));grid.setFocusable(true);grid.setHorizontalSpacing(dp(9));grid.setClipToPadding(false);grid.setPadding(0,dp(10),0,dp(12));grid.setNestedScrollingEnabled(true);content.addView(grid,new LinearLayout.LayoutParams(-1,dp(tvMode()?520:460)));moreButton=actionText("CARREGAR MAIS TÍTULOS  ↓",false);LinearLayout.LayoutParams moreParams=new LinearLayout.LayoutParams(-1,dp(52));moreParams.topMargin=dp(10);content.addView(moreButton,moreParams);moreButton.setOnClickListener(v->loadNextPage());setContentView(layout);
+ if(tvMode()){
+  grid.setOnKeyListener((view,key,event)->{
+   if(event.getAction()==KeyEvent.ACTION_DOWN && (key==KeyEvent.KEYCODE_DPAD_CENTER||key==KeyEvent.KEYCODE_ENTER)){
+    int index=grid.getSelectedItemPosition();if(index>=0&&index<shown.size()){details(shown.get(index));return true;}
+   }return false;
+  });
+  grid.postDelayed(()->grid.requestFocus(),350);
+ }
  LinearLayout bottom=new LinearLayout(this);bottom.setGravity(Gravity.CENTER);bottom.setBackgroundColor(0xff101622);layout.addView(bottom,new LinearLayout.LayoutParams(-1,dp(62)));
  String[] tabs={"⌂\nInício","▶\nFilmes","▣\nSéries","▤\nLista","⌕\nBuscar"};for(int t=0;t<tabs.length;t++){final int idx=t;TextView tab=navText(tabs[t],12);tab.setGravity(Gravity.CENTER);bottom.addView(tab,new LinearLayout.LayoutParams(0,-1,1));tab.setOnClickListener(v->{if(idx==4){search.requestFocus();((android.view.inputmethod.InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).showSoftInput(search,android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);}else chooseCategory(idx==0?"Todos":idx==1?"Filmes":idx==2?"Séries":"TV / IPTV");});}
  adapter=new BaseAdapter(){public int getCount(){return shown.size();}public Object getItem(int p){return shown.get(p);}public long getItemId(int p){return p;}
@@ -133,7 +142,7 @@ public class MainActivity extends Activity {
    }catch(Exception e){android.util.Log.w("ReelSeriesUpdate","Não foi possível consultar atualização",e);}
   });
  }
- TextView navText(String value,int size){TextView v=new TextView(this);v.setText(value);v.setTextColor(Color.WHITE);v.setTextSize(size);v.setGravity(Gravity.CENTER_VERTICAL);return v;}
+ TextView navText(String value,int size){TextView v=new TextView(this);v.setText(value);v.setTextColor(Color.WHITE);v.setTextSize(size);v.setGravity(Gravity.CENTER_VERTICAL);if(tvMode()){v.setFocusable(true);v.setOnFocusChangeListener((view,focused)->{view.setScaleX(focused?1.06f:1f);view.setScaleY(focused?1.06f:1f);view.setAlpha(focused?1f:0.9f);});}return v;}
  TextView actionText(String value,boolean primary){TextView v=navText(value,14);v.setGravity(Gravity.CENTER);v.setTypeface(null,1);v.setTextColor(primary?0xff11151d:Color.WHITE);android.graphics.drawable.GradientDrawable bg=new android.graphics.drawable.GradientDrawable();bg.setColor(primary?Color.WHITE:0xff30333c);bg.setCornerRadius(dp(12));v.setBackground(bg);return v;}
  void chooseCategory(String q){mode=q;selected="Todas";if(categories!=null&&categories.getSelectedItemPosition()!=0)categories.setSelection(0);resetFeed();}
  // Persistent SQLite cache: check at most once per 24h, never redownload on every open.
