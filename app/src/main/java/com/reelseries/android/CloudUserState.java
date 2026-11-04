@@ -14,7 +14,7 @@ public final class CloudUserState {
  private static String keyId(String key){try{byte[] hash=java.security.MessageDigest.getInstance("SHA-256").digest(key.getBytes("UTF-8"));StringBuilder b=new StringBuilder("k");for(byte v:hash)b.append(String.format(java.util.Locale.US,"%02x",v&255));return b.toString();}catch(Exception e){return "k"+Integer.toHexString(key.hashCode());}}
  public static synchronized void start(Context ctx){Context app=ctx.getApplicationContext();if(authListener!=null)return;
   authListener=auth->{synchronized(CloudUserState.class){for(ListenerRegistration reg:listeners.values())reg.remove();listeners.clear();lastSent.clear();FirebaseUser user=auth.getCurrentUser();String next=user==null?null:user.getUid();
-   if(!java.util.Objects.equals(activeUid,next)){for(String store:STORES)app.getSharedPreferences(store,Context.MODE_PRIVATE).edit().clear().apply();activeUid=next;}
+   if(!java.util.Objects.equals(activeUid,next)){activeUid=next;}
    if(user!=null)for(String store:STORES)listen(app,user.getUid(),store);}};
   FirebaseAuth.getInstance().addAuthStateListener(authListener);
  }
@@ -22,7 +22,7 @@ public final class CloudUserState {
   CollectionReference col=ref(uid,store);SharedPreferences prefs=app.getSharedPreferences(store,Context.MODE_PRIVATE);
   ListenerRegistration reg=col.addSnapshotListener((snap,error)->{
    if(error!=null||snap==null||!uid.equals(uid()))return;
-   SharedPreferences.Editor ed=prefs.edit().clear();
+   SharedPreferences.Editor ed=prefs.edit();
    for(DocumentSnapshot d:snap.getDocuments()){
     String k=d.getString("key");if(k==null||Boolean.TRUE.equals(d.getBoolean("deleted")))continue;
     Object v=d.get("value");if(v instanceof Boolean)ed.putBoolean(k,(Boolean)v);

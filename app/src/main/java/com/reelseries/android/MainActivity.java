@@ -16,6 +16,8 @@ public class MainActivity extends Activity {
  Runnable heroBatchTicker;
 
  boolean tvMode(){return getSharedPreferences("reel_tv_options",MODE_PRIVATE).getBoolean("tv_mode",false);}
+ boolean tvHardware(){return getPackageManager().hasSystemFeature("android.software.leanback") || getPackageManager().hasSystemFeature("android.hardware.type.television");}
+ boolean tvRemoteMode(){return tvMode() && tvHardware();}
  int bg=Color.rgb(12,16,27), fg=Color.WHITE; final ArrayList<String> catNames=new ArrayList<>();
  int dp(int n){return (int)(n*getResources().getDisplayMetrics().density+.5f);}
  @Override public void onCreate(Bundle b){super.onCreate(b);CloudUserState.start(this);/* Modo TV usa layout responsivo sem forcar orientacao durante onCreate. */checkApkUpdate();getWindow().setStatusBarColor(bg);getWindow().setNavigationBarColor(Color.BLACK);
@@ -47,8 +49,8 @@ public class MainActivity extends Activity {
  search=new EditText(this);search.setSingleLine(true);search.setHint("Pesquisar filme, série ou episódio");search.setTextColor(fg);search.setHintTextColor(0xff9fa5b3);search.setBackgroundColor(0xff171e2a);search.setPadding(dp(12),0,dp(12),0);LinearLayout.LayoutParams sp=new LinearLayout.LayoutParams(-1,dp(48));sp.topMargin=dp(14);content.addView(search,sp);
  LinearLayout sort=new LinearLayout(this);sort.setGravity(Gravity.CENTER_VERTICAL);sort.setPadding(0,dp(10),0,0);content.addView(sort);TextView heading=navText("Em destaque",23);heading.setTypeface(null,1);sort.addView(heading,new LinearLayout.LayoutParams(0,-2,1));categories=new Spinner(this);sort.addView(categories,new LinearLayout.LayoutParams(dp(155),dp(48)));catNames.add("Todas");categories.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_spinner_dropdown_item,catNames));
  status=navText("Carregando catálogo...",12);status.setTextColor(0xffaeb6c7);content.addView(status);
- grid=new GridView(this);grid.setNumColumns(tvMode()?5:3);grid.setVerticalSpacing(dp(12));grid.setFocusable(true);grid.setHorizontalSpacing(dp(9));grid.setClipToPadding(false);grid.setPadding(0,dp(10),0,dp(12));grid.setNestedScrollingEnabled(true);content.addView(grid,new LinearLayout.LayoutParams(-1,dp(tvMode()?520:460)));moreButton=actionText("CARREGAR MAIS TÍTULOS  ↓",false);LinearLayout.LayoutParams moreParams=new LinearLayout.LayoutParams(-1,dp(52));moreParams.topMargin=dp(10);content.addView(moreButton,moreParams);moreButton.setOnClickListener(v->loadNextPage());setContentView(layout);
- if(tvMode()){
+ grid=new GridView(this);grid.setNumColumns(tvRemoteMode()?5:(tvMode()?4:3));grid.setVerticalSpacing(dp(12));grid.setFocusable(true);grid.setHorizontalSpacing(dp(9));grid.setClipToPadding(false);grid.setPadding(0,dp(10),0,dp(12));grid.setNestedScrollingEnabled(true);content.addView(grid,new LinearLayout.LayoutParams(-1,dp(tvRemoteMode()?520:460)));moreButton=actionText("CARREGAR MAIS TÍTULOS  ↓",false);LinearLayout.LayoutParams moreParams=new LinearLayout.LayoutParams(-1,dp(52));moreParams.topMargin=dp(10);content.addView(moreButton,moreParams);moreButton.setOnClickListener(v->loadNextPage());setContentView(layout);
+ if(tvRemoteMode()){
   grid.setOnKeyListener((view,key,event)->{
    if(event.getAction()==KeyEvent.ACTION_DOWN && (key==KeyEvent.KEYCODE_DPAD_CENTER||key==KeyEvent.KEYCODE_ENTER)){
     int index=grid.getSelectedItemPosition();if(index>=0&&index<shown.size()){details(shown.get(index));return true;}
@@ -142,7 +144,7 @@ public class MainActivity extends Activity {
    }catch(Exception e){android.util.Log.w("ReelSeriesUpdate","Não foi possível consultar atualização",e);}
   });
  }
- TextView navText(String value,int size){TextView v=new TextView(this);v.setText(value);v.setTextColor(Color.WHITE);v.setTextSize(size);v.setGravity(Gravity.CENTER_VERTICAL);if(tvMode()){v.setFocusable(true);v.setOnFocusChangeListener((view,focused)->{view.setScaleX(focused?1.06f:1f);view.setScaleY(focused?1.06f:1f);view.setAlpha(focused?1f:0.9f);});}return v;}
+ TextView navText(String value,int size){TextView v=new TextView(this);v.setText(value);v.setTextColor(Color.WHITE);v.setTextSize(size);v.setGravity(Gravity.CENTER_VERTICAL);if(tvRemoteMode()){v.setFocusable(true);v.setOnFocusChangeListener((view,focused)->{view.setScaleX(focused?1.06f:1f);view.setScaleY(focused?1.06f:1f);view.setAlpha(focused?1f:0.9f);});}return v;}
  TextView actionText(String value,boolean primary){TextView v=navText(value,14);v.setGravity(Gravity.CENTER);v.setTypeface(null,1);v.setTextColor(primary?0xff11151d:Color.WHITE);android.graphics.drawable.GradientDrawable bg=new android.graphics.drawable.GradientDrawable();bg.setColor(primary?Color.WHITE:0xff30333c);bg.setCornerRadius(dp(12));v.setBackground(bg);return v;}
  void chooseCategory(String q){mode=q;selected="Todas";if(categories!=null&&categories.getSelectedItemPosition()!=0)categories.setSelection(0);resetFeed();}
  // Persistent SQLite cache: check at most once per 24h, never redownload on every open.
