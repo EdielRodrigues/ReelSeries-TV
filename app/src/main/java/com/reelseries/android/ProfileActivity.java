@@ -14,7 +14,10 @@ public class ProfileActivity extends Activity {
  boolean tv=getSharedPreferences("reel_tv_options",MODE_PRIVATE).getBoolean("tv_mode",false);
  button(tv?"📺  Modo TV ativado — desativar":"📺  Ativar modo TV (paisagem e controle)",v->{
   getSharedPreferences("reel_tv_options",MODE_PRIVATE).edit().putBoolean("tv_mode",!tv).apply();
-  new AlertDialog.Builder(this).setMessage("Feche e abra o aplicativo para aplicar o modo de televisão.").setPositiveButton("OK",null).show();render();
+  new AlertDialog.Builder(this).setTitle("Modo TV alterado")
+    .setMessage("Volte à tela inicial. O Reel Séries vai aplicar o layout horizontal e as opções de navegação por controle remoto.")
+    .setPositiveButton("Ir para o início",(d,w)->{Intent i=new Intent(this,MainActivity.class);i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_SINGLE_TOP);startActivity(i);finish();})
+    .setNegativeButton("Ficar no perfil",null).show();render();
  });
  root.addView(label("A mesma conta Firebase é usada no celular e na TV. Para sincronizar favoritos e histórico, entre com seu e-mail e senha.",13,0xffb7c2d1));
  root.addView(label("MINHA BIBLIOTECA",19,Color.WHITE));button("♥  Minha lista",v->startActivity(new Intent(this,FavoritesActivity.class)));button("▶  Continuar assistindo",v->startActivity(new Intent(this,ContinueWatchingActivity.class)));button("♛  Minha assinatura",v->new AlertDialog.Builder(this).setMessage(vip.getText()).setPositiveButton("OK",null).show());button("⚙  Configurações",v->new AlertDialog.Builder(this).setItems(new String[]{"Sobre o aplicativo","Voltar"},(d,w)->{if(w==0)new AlertDialog.Builder(this).setMessage("Reel Séries Android Nativo V6").setPositiveButton("OK",null).show();}).show());button("🛡  Administração",v->startActivity(new Intent(this,AdminActivity.class)));}

@@ -17,10 +17,14 @@ public class MainActivity extends Activity {
 
  boolean tvMode(){return getSharedPreferences("reel_tv_options",MODE_PRIVATE).getBoolean("tv_mode",false);}
  boolean tvHardware(){return getPackageManager().hasSystemFeature("android.software.leanback") || getPackageManager().hasSystemFeature("android.hardware.type.television");}
- boolean tvRemoteMode(){return tvMode() && tvHardware();}
+ boolean tvRemoteMode(){return tvMode();} // Permite testar o controle remoto também no celular
  int bg=Color.rgb(12,16,27), fg=Color.WHITE; final ArrayList<String> catNames=new ArrayList<>();
  int dp(int n){return (int)(n*getResources().getDisplayMetrics().density+.5f);}
- @Override public void onCreate(Bundle b){super.onCreate(b);CloudUserState.start(this);/* Modo TV usa layout responsivo sem forcar orientacao durante onCreate. */checkApkUpdate();getWindow().setStatusBarColor(bg);getWindow().setNavigationBarColor(Color.BLACK);
+ @Override public void onCreate(Bundle b){super.onCreate(b);CloudUserState.start(this);
+  // Solicitar orientação somente quando ela realmente muda, evitando loop de recriação.
+  int wanted=tvMode()?android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE:android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED;
+  if(getRequestedOrientation()!=wanted)setRequestedOrientation(wanted);
+  checkApkUpdate();getWindow().setStatusBarColor(bg);getWindow().setNavigationBarColor(Color.BLACK);
  LinearLayout layout=new LinearLayout(this);layout.setOrientation(1);layout.setBackgroundColor(bg);
  LinearLayout header=new LinearLayout(this);header.setGravity(Gravity.CENTER_VERTICAL);header.setPadding(dp(16),dp(10),dp(16),dp(10));layout.addView(header);
  TextView menu=navText("☰",25);header.addView(menu,new LinearLayout.LayoutParams(dp(44),dp(48)));menu.setOnClickListener(v->new AlertDialog.Builder(this).setItems(new String[]{"Início","Filmes","Séries","Canais IPTV","Meu perfil","Administração"},(d,w)->{if(w==4)startActivity(new Intent(this,ProfileActivity.class));else if(w==5)startActivity(new Intent(this,AdminActivity.class));else chooseCategory(w==0?"Todos":w==1?"Filmes":w==2?"Séries":"TV / IPTV");}).show());
@@ -29,7 +33,7 @@ public class MainActivity extends Activity {
  TextView profile=navText("♟",25);header.addView(profile,new LinearLayout.LayoutParams(dp(44),dp(48)));profile.setOnClickListener(v->startActivity(new Intent(this,ProfileActivity.class)));
  TextView admin=navText("⚙",25);header.addView(admin,new LinearLayout.LayoutParams(dp(44),dp(48)));admin.setOnClickListener(v->startActivity(new Intent(this,AdminActivity.class)));
  ScrollView scroll=new ScrollView(this);scroll.setFillViewport(true);layout.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));LinearLayout content=new LinearLayout(this);content.setOrientation(1);content.setPadding(dp(15),0,dp(15),dp(14));scroll.addView(content);
- android.widget.FrameLayout hero=new android.widget.FrameLayout(this);hero.setBackgroundColor(0xff24202a);content.addView(hero,new LinearLayout.LayoutParams(-1,dp(405)));
+ android.widget.FrameLayout hero=new android.widget.FrameLayout(this);hero.setBackgroundColor(0xff24202a);content.addView(hero,new LinearLayout.LayoutParams(-1,dp(tvMode()?240:405)));
  ImageView heroImage=new ImageView(this);heroImage.setScaleType(ImageView.ScaleType.FIT_CENTER);hero.addView(heroImage,new android.widget.FrameLayout.LayoutParams(-1,-1));
  View overlay=new View(this);overlay.setBackground(new android.graphics.drawable.GradientDrawable(android.graphics.drawable.GradientDrawable.Orientation.TOP_BOTTOM,new int[]{0x150b101b,0x660b101b,0xff0b101b}));hero.addView(overlay,new android.widget.FrameLayout.LayoutParams(-1,-1));
  LinearLayout heroCopy=new LinearLayout(this);heroCopy.setOrientation(1);heroCopy.setPadding(dp(14),dp(10),dp(14),dp(16));android.widget.FrameLayout.LayoutParams hp=new android.widget.FrameLayout.LayoutParams(-1,-2,Gravity.BOTTOM);hero.addView(heroCopy,hp);
@@ -49,7 +53,7 @@ public class MainActivity extends Activity {
  search=new EditText(this);search.setSingleLine(true);search.setHint("Pesquisar filme, série ou episódio");search.setTextColor(fg);search.setHintTextColor(0xff9fa5b3);search.setBackgroundColor(0xff171e2a);search.setPadding(dp(12),0,dp(12),0);LinearLayout.LayoutParams sp=new LinearLayout.LayoutParams(-1,dp(48));sp.topMargin=dp(14);content.addView(search,sp);
  LinearLayout sort=new LinearLayout(this);sort.setGravity(Gravity.CENTER_VERTICAL);sort.setPadding(0,dp(10),0,0);content.addView(sort);TextView heading=navText("Em destaque",23);heading.setTypeface(null,1);sort.addView(heading,new LinearLayout.LayoutParams(0,-2,1));categories=new Spinner(this);sort.addView(categories,new LinearLayout.LayoutParams(dp(155),dp(48)));catNames.add("Todas");categories.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_spinner_dropdown_item,catNames));
  status=navText("Carregando catálogo...",12);status.setTextColor(0xffaeb6c7);content.addView(status);
- grid=new GridView(this);grid.setNumColumns(tvRemoteMode()?5:(tvMode()?4:3));grid.setVerticalSpacing(dp(12));grid.setFocusable(true);grid.setHorizontalSpacing(dp(9));grid.setClipToPadding(false);grid.setPadding(0,dp(10),0,dp(12));grid.setNestedScrollingEnabled(true);content.addView(grid,new LinearLayout.LayoutParams(-1,dp(tvRemoteMode()?520:460)));moreButton=actionText("CARREGAR MAIS TÍTULOS  ↓",false);LinearLayout.LayoutParams moreParams=new LinearLayout.LayoutParams(-1,dp(52));moreParams.topMargin=dp(10);content.addView(moreButton,moreParams);moreButton.setOnClickListener(v->loadNextPage());setContentView(layout);
+ grid=new GridView(this);grid.setNumColumns(tvMode()?5:3);grid.setVerticalSpacing(dp(12));grid.setFocusable(true);grid.setHorizontalSpacing(dp(9));grid.setClipToPadding(false);grid.setPadding(0,dp(10),0,dp(12));grid.setNestedScrollingEnabled(true);content.addView(grid,new LinearLayout.LayoutParams(-1,dp(tvMode()?420:460)));moreButton=actionText("CARREGAR MAIS TÍTULOS  ↓",false);LinearLayout.LayoutParams moreParams=new LinearLayout.LayoutParams(-1,dp(52));moreParams.topMargin=dp(10);content.addView(moreButton,moreParams);moreButton.setOnClickListener(v->loadNextPage());setContentView(layout);
  if(tvRemoteMode()){
   grid.setOnKeyListener((view,key,event)->{
    if(event.getAction()==KeyEvent.ACTION_DOWN && (key==KeyEvent.KEYCODE_DPAD_CENTER||key==KeyEvent.KEYCODE_ENTER)){
@@ -58,13 +62,15 @@ public class MainActivity extends Activity {
   });
   grid.postDelayed(()->grid.requestFocus(),350);
  }
- LinearLayout bottom=new LinearLayout(this);bottom.setGravity(Gravity.CENTER);bottom.setBackgroundColor(0xff101622);layout.addView(bottom,new LinearLayout.LayoutParams(-1,dp(62)));
+ LinearLayout bottom=new LinearLayout(this);bottom.setGravity(Gravity.CENTER);bottom.setBackgroundColor(0xff101622);layout.addView(bottom,new LinearLayout.LayoutParams(-1,dp(62)));if(tvMode())bottom.setVisibility(View.GONE);
  String[] tabs={"⌂\nInício","▶\nFilmes","▣\nSéries","▤\nLista","⌕\nBuscar"};for(int t=0;t<tabs.length;t++){final int idx=t;TextView tab=navText(tabs[t],12);tab.setGravity(Gravity.CENTER);bottom.addView(tab,new LinearLayout.LayoutParams(0,-1,1));tab.setOnClickListener(v->{if(idx==4){search.requestFocus();((android.view.inputmethod.InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).showSoftInput(search,android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);}else chooseCategory(idx==0?"Todos":idx==1?"Filmes":idx==2?"Séries":"TV / IPTV");});}
  adapter=new BaseAdapter(){public int getCount(){return shown.size();}public Object getItem(int p){return shown.get(p);}public long getItemId(int p){return p;}
  public View getView(int p,View old,android.view.ViewGroup parent){
  LinearLayout box;ImageView cover;TextView label;
  if(old instanceof LinearLayout && ((LinearLayout)old).getChildCount()==2){box=(LinearLayout)old;cover=(ImageView)box.getChildAt(0);label=(TextView)box.getChildAt(1);}
- else{box=new LinearLayout(MainActivity.this);box.setOrientation(1);box.setBackgroundColor(0xff1c2432);box.setPadding(dp(5),dp(5),dp(5),dp(7));cover=new ImageView(MainActivity.this);cover.setBackgroundColor(0xff30394b);cover.setScaleType(ImageView.ScaleType.CENTER_CROP);box.addView(cover,new LinearLayout.LayoutParams(-1,dp(165)));label=new TextView(MainActivity.this);label.setTextColor(fg);label.setTextSize(12);label.setMaxLines(2);label.setEllipsize(android.text.TextUtils.TruncateAt.END);box.addView(label);}
+ else{box=new LinearLayout(MainActivity.this);box.setOrientation(1);box.setBackgroundColor(0xff1c2432);box.setPadding(dp(5),dp(5),dp(5),dp(7));
+  if(tvMode()){box.setFocusable(true);box.setOnFocusChangeListener((v,focused)->{v.setBackgroundColor(focused?0xff4264a8:0xff1c2432);v.setScaleX(focused?1.035f:1f);v.setScaleY(focused?1.035f:1f);});}
+  cover=new ImageView(MainActivity.this);cover.setBackgroundColor(0xff30394b);cover.setScaleType(ImageView.ScaleType.CENTER_CROP);box.addView(cover,new LinearLayout.LayoutParams(-1,dp(tvMode()?140:165)));label=new TextView(MainActivity.this);label.setTextColor(fg);label.setTextSize(12);label.setMaxLines(2);label.setEllipsize(android.text.TextUtils.TruncateAt.END);box.addView(label);}
  JSONObject item=shown.get(p);label.setText(item.optString("nome"));loadCover(item.optString("capa"),cover);return box;
  }};grid.setAdapter(adapter);
  grid.setOnItemClickListener((a,v,p,id)->details(shown.get(p)));
@@ -246,12 +252,15 @@ public class MainActivity extends Activity {
  void filter(){if(adapter==null)return;String q=search.getText().toString().toLowerCase(java.util.Locale.ROOT).trim();shown.clear();java.util.HashSet<String> ids=new java.util.HashSet<>(),grouped=new java.util.HashSet<>();ArrayList<JSONObject> combined=new ArrayList<>(localPages);if(combined.isEmpty() && pageOffset==0){int added=0;for(JSONObject fallback:all){if(matches(fallback,q)){combined.add(fallback);if(++added>=60)break;}}}for(JSONObject o:combined){if(!matches(o,q))continue;String id=o.optString("id","");if(!id.isEmpty()&&!ids.add(id))continue;if(SeriesHelper.isSeries(o)){String k=SeriesHelper.key(o);if(!grouped.add(k))continue;}shown.add(o);}status.setText(shown.size()+" títulos exibidos • "+all.size()+" no APK");adapter.notifyDataSetChanged();updateGridHeight();}
  void updateGridHeight(){
   if(grid==null)return;
-  int rows=Math.max(1,(shown.size()+2)/3);
-  int height=dp(10)+rows*dp(215)+Math.max(0,rows-1)*dp(12)+dp(12);
+  int columns=tvMode()?5:3;int rows=Math.max(1,(shown.size()+columns-1)/columns);
+  int height=dp(10)+rows*dp(tvMode()?195:215)+Math.max(0,rows-1)*dp(12)+dp(12);
   android.view.ViewGroup.LayoutParams params=grid.getLayoutParams();
   if(params!=null&&params.height!=height){params.height=height;grid.setLayoutParams(params);}
  }
- @Override protected void onResume(){super.onResume();heroActive=true;if(heroBatchTicker!=null){handler.removeCallbacks(heroBatchTicker);handler.post(heroBatchTicker);}if(heroTicker!=null){handler.removeCallbacks(heroTicker);handler.postDelayed(heroTicker,HERO_SLIDE_MS);}if(search!=null){String wanted=getIntent().getStringExtra("reel_search_title");if(wanted!=null&&!wanted.isEmpty()){getIntent().removeExtra("reel_search_title");search.setText(wanted);search.setSelection(search.length());}resetFeed();if(FirebaseCatalogSync.configured(this))loadCloud();}}
+ @Override protected void onResume(){super.onResume();
+  int wanted=tvMode()?android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE:android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED;
+  if(getRequestedOrientation()!=wanted){setRequestedOrientation(wanted);recreate();return;}
+  heroActive=true;if(heroBatchTicker!=null){handler.removeCallbacks(heroBatchTicker);handler.post(heroBatchTicker);}if(heroTicker!=null){handler.removeCallbacks(heroTicker);handler.postDelayed(heroTicker,HERO_SLIDE_MS);}if(search!=null){String wanted=getIntent().getStringExtra("reel_search_title");if(wanted!=null&&!wanted.isEmpty()){getIntent().removeExtra("reel_search_title");search.setText(wanted);search.setSelection(search.length());}resetFeed();if(FirebaseCatalogSync.configured(this))loadCloud();}}
  @Override protected void onNewIntent(Intent intent){super.onNewIntent(intent);setIntent(intent);if(search!=null){String wanted=intent.getStringExtra("reel_search_title");if(wanted!=null&&!wanted.isEmpty()){intent.removeExtra("reel_search_title");search.setText(wanted);search.setSelection(search.length());}}}
  void details(JSONObject o){Intent i=new Intent(this,DetailsActivity.class);i.putExtra("item",o.toString());startActivity(i);}
  void loadCover(String url,ImageView image){if(url.equals(image.getTag()) && image.getDrawable()!=null)return;image.setTag(url);Bitmap hit=cache.get(url);if(hit!=null){image.setImageBitmap(hit);return;}image.setImageDrawable(null);if(!url.startsWith("https://"))return;pool.execute(()->{try{HttpURLConnection c=(HttpURLConnection)new URL(url).openConnection();c.setConnectTimeout(4500);c.setReadTimeout(5000);c.setInstanceFollowRedirects(true);InputStream in=c.getInputStream();BitmapFactory.Options opts=new BitmapFactory.Options();opts.inSampleSize=4;Bitmap bitmap=BitmapFactory.decodeStream(in,null,opts);in.close();c.disconnect();if(bitmap!=null){cache.put(url,bitmap);runOnUiThread(()->{if(url.equals(image.getTag()))image.setImageBitmap(bitmap);});}}catch(Exception ignored){}});}
