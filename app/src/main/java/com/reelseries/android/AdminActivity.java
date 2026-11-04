@@ -22,7 +22,7 @@ public class AdminActivity extends Activity {
  private final ExecutorService worker=Executors.newSingleThreadExecutor();
  private LinearLayout root;private TextView status;private boolean authorized=false,busy=false;
  private LocalCatalog catalog;
- @Override public void onCreate(Bundle b){super.onCreate(b);catalog=new LocalCatalog(this);login();}
+ @Override public void onCreate(Bundle b){super.onCreate(b);if(getSharedPreferences("reel_tv_options",MODE_PRIVATE).getBoolean("tv_mode",false))setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);catalog=new LocalCatalog(this);login();}
  private int dp(int n){return (int)(n*getResources().getDisplayMetrics().density+0.5f);}
  private GradientDrawable shape(int color,int radius){GradientDrawable d=new GradientDrawable();d.setColor(color);d.setCornerRadius(dp(radius));return d;}
  private void screen(String title){

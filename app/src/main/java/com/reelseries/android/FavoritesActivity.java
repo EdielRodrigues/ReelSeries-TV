@@ -17,7 +17,7 @@ public class FavoritesActivity extends Activity {
  private LocalCatalog catalog;
  private int dp(int n){return (int)(n*getResources().getDisplayMetrics().density+.5f);}
  private TextView text(String s,int size,int color){TextView t=new TextView(this);t.setText(s);t.setTextSize(size);t.setTextColor(color);return t;}
- @Override public void onCreate(Bundle state){super.onCreate(state);getWindow().setStatusBarColor(bg);getWindow().setNavigationBarColor(bg);catalog=new LocalCatalog(this);
+ @Override public void onCreate(Bundle state){super.onCreate(state);if(getSharedPreferences("reel_tv_options",MODE_PRIVATE).getBoolean("tv_mode",false))setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);getWindow().setStatusBarColor(bg);getWindow().setNavigationBarColor(bg);catalog=new LocalCatalog(this);
   LinearLayout root=new LinearLayout(this);root.setOrientation(1);root.setBackgroundColor(bg);root.setPadding(dp(16),dp(14),dp(16),dp(10));setContentView(root);
   TextView heading=text("‹  MINHA LISTA",24,0xffff4564);heading.setTypeface(null,1);heading.setPadding(0,dp(10),0,dp(18));root.addView(heading);heading.setOnClickListener(v->finish());
   ScrollView scroll=new ScrollView(this);root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));list=new LinearLayout(this);list.setOrientation(1);scroll.addView(list);
@@ -39,7 +39,7 @@ public class FavoritesActivity extends Activity {
    String synopsis=item.optString("sinopse","");if(!synopsis.isEmpty()){TextView desc=text(synopsis,12,0xffcbd5e1);desc.setMaxLines(3);info.addView(desc);}
    loadPoster(item.optString("capa",""),cover);
    Button details=new Button(this);details.setAllCaps(false);details.setText("▶  Ver detalhes / Assistir");info.addView(details);JSONObject selected=item;
-   details.setOnClickListener(v->openDetails(selected));card.setOnClickListener(v->openDetails(selected));
+   details.setOnClickListener(v->openDetails(selected));card.setFocusable(true);card.setOnClickListener(v->openDetails(selected));
   }else{TextView missing=text("Título não encontrado no catálogo local.",12,0xffcbd5e1);info.addView(missing);}
   TextView remove=text("♥  Remover da lista",13,0xffff8195);remove.setPadding(0,dp(10),0,dp(6));info.addView(remove);
   remove.setOnClickListener(v->new AlertDialog.Builder(this).setMessage("Remover "+name+" da Minha Lista?").setNegativeButton("Cancelar",null).setPositiveButton("Remover",(d,w)->{getSharedPreferences("reel_favorites",MODE_PRIVATE).edit().remove(name).apply();CloudUserState.remove(this,"reel_favorites",name);refresh();}).show());
